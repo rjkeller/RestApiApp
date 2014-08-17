@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  * 
  * @author R.J. Keller <rjkeller-fun@pixonite.com>
  */
-class ItemControllerTest extends WebTestCase
+class RestApiControllerTest extends WebTestCase
 {
     public function testCompleteScenario()
     {

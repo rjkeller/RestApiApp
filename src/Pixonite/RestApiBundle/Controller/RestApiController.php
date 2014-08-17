@@ -18,7 +18,7 @@ use Pixonite\RestApiBundle\Form\ItemSetType;
  * @author R.J. Keller <rjkeller-fun@pixonite.com>
  * @Route("/api/v1/")
  */
-class SampleDataController extends Controller
+class RestApiController extends Controller
 {
 
     /**
