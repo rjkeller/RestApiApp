@@ -41,13 +41,16 @@ class SampleDataController extends Controller
     }
 
     /**
-     * Creates a new SampleData entity.
+     * Creates or modifies a new SampleData entity.
      *
-     * @Route("{entityName}.json", name="api_sample-data_create")
+     * @Route("{entityName}.json", name="api_sample-data_create", defaults={"id" = null})
+     * @Route("{entityName}/{id}.json", name="api_sample-data_update")
      * @Method("POST")
      */
-    public function createAction($entityName)
+    public function createAction($entityName, $id = null)
     {
+        $em = $this->get('doctrine')->getManager();
+
         //-- Do some validation first
         $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
@@ -60,7 +63,22 @@ class SampleDataController extends Controller
         $entityTypeClass = "Pixonite\\RestApiBundle\\Form\\". $entityName . "Type";
 
         $entity = new $entityClass();
-        $entity->authorUserId = $user->id;
+
+        //if this is an element update, attempt to load the element
+        if ($id != null) {
+            $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->findOneBy([
+                'id' => $id,
+                'authorUserId' => $user->id,
+                ]);
+            if (!$entity) {
+                throw $this->createNotFoundException('Unable to find ID or access is denied.');
+            }
+        }
+        //if we're creating an item, then initialize some defaults
+        else {
+            $entity->authorUserId = $user->id;
+        }
+
         $form = $this->createCreateForm($entity, new $entityTypeClass());
         $form->submit($_POST, false);
 
@@ -95,7 +113,7 @@ class SampleDataController extends Controller
         $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->find($id);
 
         if (!$entity) {
-            throw $this->createNotFoundException('Unable to find SampleData entity or access is denied.');
+            throw $this->createNotFoundException('Unable to find ID or access is denied.');
         }
 
         return $this->getJsonResponse(['entity' => $entity]);

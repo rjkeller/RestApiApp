@@ -36,6 +36,7 @@ class ItemControllerTest extends WebTestCase
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POST, count($fields));
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -70,11 +71,55 @@ class ItemControllerTest extends WebTestCase
         curl_close($ch);
 
         $isHit = false;
+        $itemId = null;
         foreach ($allEntries->entities as $obj) {
-            if ($obj == $result->entity)
+            if ($obj == $result->entity) {
+                $itemId = $result->entity->id;
                 $isHit = true;
+            }
         }
         $this->assertTrue($isHit);
+
+        //-- update element test
+        // 1) Update element
+        $fields = array(
+            'name' => "This is a test!",
+            'url' => 'http://yay2',
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item/'. $itemId .'.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertEquals("Success!", $result->status);
+
+        // 2) Make sure update is applied
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $isHit = false;
+        $element = null;
+        foreach ($allEntries->entities as $obj) {
+            if ($obj == $result->entity) {
+                $isHit = true;
+                $element = $obj;
+            }
+        }
+
+        $this->assertTrue($isHit);
+        $this->assertTrue($element != null);
+        $this->assertEquals("http://yay2", $element->url);
 
         //-- delete element test
         $ch = curl_init();
