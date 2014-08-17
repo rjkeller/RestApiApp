@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  * 
  * @author R.J. Keller <rjkeller-fun@pixonite.com>
  */
-class SampleDataControllerTest extends WebTestCase
+class ItemControllerTest extends WebTestCase
 {
     public function testCompleteScenario()
     {
@@ -20,7 +20,7 @@ class SampleDataControllerTest extends WebTestCase
         $goodAuthHeader = ['Authorization: Basic '. base64_encode("a@aa.com:a1!")];
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/SampleData.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $badAuthHeader);
         $result = json_decode(curl_exec($ch));
@@ -30,11 +30,12 @@ class SampleDataControllerTest extends WebTestCase
 
         //-- create element test
         $fields = array(
-            'data' => "This is a test!",
+            'name' => "This is a test!",
+            'url' => 'http://yay',
         );
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/SampleData.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
         curl_setopt($ch, CURLOPT_POST, count($fields));
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -45,10 +46,24 @@ class SampleDataControllerTest extends WebTestCase
 
         $this->assertEquals("Success!", $result->status);
 
+        //-- try to delete an entity that doesn't belong to this user.
+        // Item #1 in the DB is a dummie item set up by fixtures that isn't deletable by any user.
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item/1.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $data = curl_exec($ch);
+        $delResponse = json_decode($data);
+        curl_close($ch);
+
+        $this->assertNotEquals("Success!", $delResponse->status);
+
 
         //-- retrieve element test
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/SampleData.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
         $allEntries = json_decode(curl_exec($ch));
@@ -63,7 +78,7 @@ class SampleDataControllerTest extends WebTestCase
 
         //-- delete element test
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/SampleData/' . $result->entity->id .'.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item/' . $result->entity->id .'.json');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
@@ -78,7 +93,7 @@ class SampleDataControllerTest extends WebTestCase
 
         //-- retrieve elements and make sure new one is deleted
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/SampleData.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
         $allEntries = json_decode(curl_exec($ch));

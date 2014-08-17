@@ -51,7 +51,7 @@ class SampleDataController extends Controller
         //-- Do some validation first
         $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
-        $this->checkAuthentication();
+        $user = $this->checkAuthentication();
 
 
 
@@ -60,6 +60,7 @@ class SampleDataController extends Controller
         $entityTypeClass = "Pixonite\\RestApiBundle\\Form\\". $entityName . "Type";
 
         $entity = new $entityClass();
+        $entity->authorUserId = $user->id;
         $form = $this->createCreateForm($entity, new $entityTypeClass());
         $form->submit($_POST, false);
 
@@ -94,7 +95,7 @@ class SampleDataController extends Controller
         $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->find($id);
 
         if (!$entity) {
-            throw $this->createNotFoundException('Unable to find SampleData entity.');
+            throw $this->createNotFoundException('Unable to find SampleData entity or access is denied.');
         }
 
         return $this->getJsonResponse(['entity' => $entity]);
@@ -112,12 +113,15 @@ class SampleDataController extends Controller
         //-- Do some validation first
         $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
-        $this->checkAuthentication();
+        $user = $this->checkAuthentication();
 
 
         $request = $this->getRequest();
         $em = $this->getDoctrine()->getManager();
-        $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->find($id);
+        $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->findOneBy([
+            'id' => $id,
+            'authorUserId' => $user->id,
+            ]);
 
         if (!$entity) {
             throw $this->createNotFoundException('Unable to find SampleData entity.');
@@ -198,6 +202,7 @@ class SampleDataController extends Controller
      * an exception is thrown.
      * 
      * @throws \Exception When authentication fails.
+     * @return The user that is currently logged in.
      */
     private function checkAuthentication()
     {
@@ -220,7 +225,7 @@ class SampleDataController extends Controller
 
                 //if a user was found with good credentials, then authentication was successful!
                 if ($user != null)
-                    return true;
+                    return $user;
             }
         }
 

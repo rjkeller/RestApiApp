@@ -49,4 +49,8 @@ class Item
      */
     public $url;
 
+    public function __construct()
+    {
+        $this->creationDate = new \DateTime();
+    }
 }
