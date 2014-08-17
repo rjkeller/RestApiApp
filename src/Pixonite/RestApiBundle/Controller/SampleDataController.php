@@ -95,6 +95,11 @@ class SampleDataController extends Controller
         if (isset($_GET['anyItemIds'])) {
             $ids = json_decode($_GET['anyItemIds']);
             foreach ($entities as $key => $value) {
+                //slight hack to prevent PHP from being annoyed by null arrays
+                //when calling array_intersect below.
+                if ($value->itemIds == null)
+                    $value->itemIds = array();
+
                 if (count(array_intersect($ids, $value->itemIds)) <= 0) {
                     unset($entities[$key]);
                 }
@@ -105,6 +110,8 @@ class SampleDataController extends Controller
         if (isset($_GET['allItemIds'])) {
             $ids = json_decode($_GET['allItemIds']);
             foreach ($entities as $key => $value) {
+                //slight hack to prevent PHP from being annoyed by null arrays
+                //when calling array_diff below.
                 if ($value->itemIds == null)
                     $value->itemIds = array();
                 if (count(array_diff($ids, $value->itemIds)) != 0) {
