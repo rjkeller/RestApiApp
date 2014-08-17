@@ -27,10 +27,10 @@ class SampleDataController extends Controller
      */
     public function indexAction($entityName)
     {
-        $this->getRequest()->setRequestFormat("json");
         //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
-
+        $this->checkAuthentication();
 
 
         $em = $this->getDoctrine()->getManager();
@@ -49,7 +49,9 @@ class SampleDataController extends Controller
     public function createAction($entityName)
     {
         //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
+        $this->checkAuthentication();
 
 
 
@@ -67,13 +69,10 @@ class SampleDataController extends Controller
             $em->persist($entity);
             $em->flush();
 
-            return $this->getJsonResponse([
-                "response" => "Success!",
-                "entity" => $entity,
-            ]);
+            return $this->getJsonResponse(["entity" => $entity]);
         }
 
-        return $this->getJsonResponse(['entity' => $entity]);
+        return $this->getJsonResponse(['status' => 'failed', 'entity' => $entity]);
     }
 
     /**
@@ -85,8 +84,9 @@ class SampleDataController extends Controller
     public function showAction($entityName, $id)
     {
         //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
-
+        $this->checkAuthentication();
 
 
         $em = $this->getDoctrine()->getManager();
@@ -110,7 +110,9 @@ class SampleDataController extends Controller
     public function deleteAction($entityName, $id)
     {
         //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
         $this->checkEntityName($entityName);
+        $this->checkAuthentication();
 
 
         $request = $this->getRequest();
@@ -124,10 +126,7 @@ class SampleDataController extends Controller
         $em->remove($entity);
         $em->flush();
 
-        return $this->getJsonResponse([
-            "response" => "Success!",
-            "id" => $id,
-        ]);
+        return $this->getJsonResponse(["id" => $id]);
     }
 
     //----------- FORMS FOR VARIOUS REST FUNCTIONS -----------//
@@ -192,5 +191,40 @@ class SampleDataController extends Controller
         $response = new Response(json_encode($array, JSON_PRETTY_PRINT));
         $response->headers->set('Content-Type', 'application/json');
         return $response;
+    }
+
+    /**
+     * Checks if the authentication headers corresond to a valid user. If not,
+     * an exception is thrown.
+     * 
+     * @throws \Exception When authentication fails.
+     */
+    private function checkAuthentication()
+    {
+        $em = $this->get('doctrine')->getManager();
+        $allHeaders = getallheaders();
+        foreach ($allHeaders as $name => $value) {
+            //if we found the authentication header, 
+            if ($name == "Authorization") {
+                //decode the authentication information in the format:
+                //    Authentication: Basic [Base64Encoded(Username:Password)
+                $parsedData = explode(" ", $value);
+                $authInfo = explode(":", base64_decode(array_pop($parsedData)));
+
+                //validate the user
+                $user = $em->getRepository("PixoniteRestApiBundle:User")
+                    ->findOneBy([
+                        'email' => $authInfo[0],
+                        'password' => $authInfo[1],
+                    ]);
+
+                //if a user was found with good credentials, then authentication was successful!
+                if ($user != null)
+                    return true;
+            }
+        }
+
+        //if there is no authentication headers or auth failed.
+        throw new \Exception("Access Denied");
     }
 }
