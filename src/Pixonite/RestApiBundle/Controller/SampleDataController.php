@@ -41,6 +41,30 @@ class SampleDataController extends Controller
     }
 
     /**
+     * Lists all entities owned by the specified user.
+     *
+     * @Route("users/{authorEmail}/{entityName}.json", name="api_users-id-entity-name")
+     * @Method("GET")
+     */
+    public function fetchByUserAction($authorEmail, $entityName)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
+        $this->checkEntityName($entityName);
+        $this->checkAuthentication();
+
+
+        $user = $em->getRepository("PixoniteRestApiBundle:User")
+            ->findOneByEmail($authorEmail);
+        $entities = $em->getRepository('PixoniteRestApiBundle:'. $entityName)
+            ->findByAuthorUserId($user->id);
+
+        return $this->getJsonResponse(['entities' => $entities]);
+    }
+
+    /**
      * Creates or modifies a new SampleData entity.
      *
      * @Route("{entityName}.json", name="api_sample-data_create", defaults={"id" = null})

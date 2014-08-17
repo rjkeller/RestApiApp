@@ -80,6 +80,16 @@ class ItemControllerTest extends WebTestCase
         }
         $this->assertTrue($isHit);
 
+        //-- retrieve by user ID test
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/users/'. urlencode('a@aa.com') .'/Item.json');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertTrue(count($allEntries->entities) > 0);
+
         //-- update element test
         // 1) Update element
         $fields = array(
