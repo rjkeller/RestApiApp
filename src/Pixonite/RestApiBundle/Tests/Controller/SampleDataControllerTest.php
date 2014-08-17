@@ -269,16 +269,15 @@ class ItemControllerTest extends WebTestCase
         curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json?anyItemIds='. urlencode(json_encode([1,2])));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
-        $allEntries = (curl_exec($ch));
+        $allEntries = json_decode(curl_exec($ch));
         curl_close($ch);
 
-        $numHit = 0;
-        echo($allEntries);die();
         foreach ($allEntries->entities as $obj) {
-            if ($obj->name == "woah1" || $obj->name == "woah12")
-                $isHit++;
+            $this->assertTrue(
+                in_array(1, $obj->itemIds) ||
+                in_array(2, $obj->itemIds)
+            );
         }
-        $this->assertTrue($numHit >= 2);
 
     }
 }
