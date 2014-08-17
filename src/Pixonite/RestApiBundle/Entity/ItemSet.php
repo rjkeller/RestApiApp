@@ -82,6 +82,7 @@ class ItemSet
             if ($key != "url" && $key != "itemIds")
                 return false;
         }
+
         return true;
     }
 }

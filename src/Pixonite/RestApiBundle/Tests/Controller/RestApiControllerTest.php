@@ -279,5 +279,19 @@ class RestApiControllerTest extends WebTestCase
             );
         }
 
+        //-- try some queries
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json?setTypeId=1');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertTrue(count($allEntries->entities) > 0);
+        foreach ($allEntries->entities as $obj) {
+            $this->assertTrue($obj->setTypeId == 1);
+        }
+
+
     }
 }

@@ -13,12 +13,12 @@ use Pixonite\RestApiBundle\Form\ItemType;
 use Pixonite\RestApiBundle\Form\ItemSetType;
 
 /**
- * This is the sample controller for a REST api that I quickly cooked up.
+ * Rest API project
  *
  * @author R.J. Keller <rjkeller-fun@pixonite.com>
  * @Route("/api/v1/")
  */
-class RestApiController extends Controller
+class SampleDataController extends Controller
 {
 
     /**
@@ -175,7 +175,7 @@ class RestApiController extends Controller
         return $this->getJsonResponse([
             'status' => 'failed',
             'entity' => $entity,
-            'errors' => $form->getErrors()
+            'errors' => (string) $form->getErrors(true, false),
             ]);
     }
 
@@ -233,12 +233,6 @@ class RestApiController extends Controller
         $form->submit($_POST, false);
 
         if ($form->isValid()) {
-
-            //check if set type exists
-            $setType = $em->getRepository("PixoniteRestApiBundle:SetType")
-                ->findOneById($entity->setTypeId);
-            if ($setType == null)
-                throw new \Exception("Invalid set type. Set type does not exist.");
 
             $entity->itemIds = $ids;
             $em = $this->getDoctrine()->getManager();
@@ -342,7 +336,6 @@ class RestApiController extends Controller
     {
         /*
          * Commenting out for now the ability to auto detect this list.
-
         $em = $this->getDoctrine()->getManager();
         $allMetadata = $em->getMetadataFactory()->getAllMetadata();
         $allEntities = [];
