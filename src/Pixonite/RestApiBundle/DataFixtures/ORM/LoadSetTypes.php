@@ -14,7 +14,7 @@ class LoadSetTypes implements FixtureInterface
     {
         $setType1 = new SetType();
         $setType1->description = "audiophile setup";
-	$em->persist($setType1);
+        $em->persist($setType1);
 
         $setType2 = new SetType();
         $setType2->description = "male fashion outfit";
@@ -24,6 +24,6 @@ class LoadSetTypes implements FixtureInterface
         $setType3->description = "yarn knitting pattern";
         $em->persist($setType3);
 
-	$em->flush();
+        $em->flush();
     }
 }
