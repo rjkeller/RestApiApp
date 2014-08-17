@@ -22,7 +22,19 @@ class SampleDataController extends Controller
 {
 
     /**
-     * Lists all SampleData entities.
+     * Retrieves results of the specified entity type (ItemSet, Item).
+     * 
+     * GET parameters:
+     *   * name - Filter by name
+     *   * setTypeId - Filter by set type
+     *   * authorEmail - Filter by author email
+     *   * lastN - Retrieve the last N entries based on creation date
+     *   * firstN - Retrieve the first N entries based on creation date
+     *   * anyItemIds - For ItemSets, it returns the ItemSets that contain the
+     *       specified number. This should be Json encoded array of IDs.
+     *   * allItemIds - For ItemSets, it returns the ItemSets that contain ALL
+     *       of the specified item IDs. This should be Json encoded array of
+     *       IDs.
      *
      * @Route("{entityName}.json", name="api_sample-data")
      * @Method("GET")
@@ -106,7 +118,7 @@ class SampleDataController extends Controller
     }
 
     /**
-     * Creates or modifies a new SampleData entity.
+     * Creates or modifies an Item entity.
      *
      * @Route("Item.json", name="api_sample-data_create", defaults={"id" = null})
      * @Route("Item/{id}.json", name="api_sample-data_update")
@@ -161,7 +173,7 @@ class SampleDataController extends Controller
     }
 
     /**
-     * Creates or modifies a new SampleData entity.
+     * Creates or modifies a ItemSet.
      *
      * @Route("ItemSet.json", name="api_item-set_create", defaults={"id" = null})
      * @Route("ItemSet/{id}.json", name="api_item-set_update")
@@ -189,6 +201,11 @@ class SampleDataController extends Controller
                 ]);
             if (!$entity) {
                 throw $this->createNotFoundException('Unable to find ID or access is denied.');
+            }
+
+            // if the modify request is invalid, throw an exception
+            if (!$entity->validate()) {
+                throw new \Exception("Invalid modify request");
             }
         }
         //if we're creating an item, then initialize some defaults
@@ -226,12 +243,12 @@ class SampleDataController extends Controller
     }
 
     /**
-     * Finds and displays an entity
+     * Finds and displays an entity.
      *
      * @Route("{entityName}/{id}.json", name="api_sample-data_show")
      * @Method("GET")
      */
-    public function showAction($entityName, $id)
+    public function retrieveByIdAction($entityName, $id)
     {
         //-- Do some validation first
         $this->getRequest()->setRequestFormat("json");
@@ -252,7 +269,7 @@ class SampleDataController extends Controller
 
 
     /**
-     * Deletes a SampleData entity.
+     * Deletes the specified entity.
      *
      * @Route("{entityName}/{id}.json", name="api_sample-data_delete")
      * @Method("DELETE")

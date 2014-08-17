@@ -53,4 +53,16 @@ class Item
     {
         $this->creationDate = new \DateTime();
     }
+
+    /**
+     * Tell the 'modify' function to only permit the URL to be modified.
+     */
+    public function validate()
+    {
+        foreach ($_POST as $key => $value) {
+            if ($key != "url")
+                return false;
+        }
+        return true;
+    }
 }

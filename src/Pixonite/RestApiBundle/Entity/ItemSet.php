@@ -67,4 +67,21 @@ class ItemSet
     {
         $this->creationDate = new \DateTime();
     }
+
+    /**
+     * Tell the 'modify' function to only permit the URL to be modified.
+     */
+    public function validate()
+    {
+        if (isset($_POST['itemIds'])) {
+            $ids = json_decode($_POST['itemIds']);
+            if (count($ids) <= 0)
+                return false;
+        }
+        foreach ($_POST as $key => $value) {
+            if ($key != "url" && $key != "itemIds")
+                return false;
+        }
+        return true;
+    }
 }
