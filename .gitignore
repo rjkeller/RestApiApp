@@ -1,0 +1,26 @@
+# Cache and logs
+/app/cache/*
+/app/logs/*
+!app/cache/.gitkeep
+!app/logs/.gitkeep
+
+/app/bootstrap.php.cache
+/app/SymfonyRequirements.php
+/app/check.php
+
+# Parameters
+/app/config/parameters.yml
+/app/config/parameters.ini
+
+# Managed by Composer
+/app/bootstrap.php.cache
+/bin/
+/vendor/
+
+# Assets and user uploads
+/web/bundles/
+/web/uploads/
+
+# Composer
+/composer.phar
+/composer.lock
