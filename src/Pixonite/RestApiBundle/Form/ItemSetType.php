@@ -19,7 +19,6 @@ class ItemSetType extends AbstractType
             ->add('authorUserId')
             ->add('creationDate')
             ->add('name')
-            ->add('itemIds')
             ->add('url')
         ;
     }

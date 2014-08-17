@@ -7,8 +7,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Pixonite\RestApiBundle\Entity\SampleData;
-use Pixonite\RestApiBundle\Form\SampleDataType;
+use Pixonite\RestApiBundle\Entity\Item;
+use Pixonite\RestApiBundle\Entity\ItemSet;
+use Pixonite\RestApiBundle\Form\ItemType;
+use Pixonite\RestApiBundle\Form\ItemSetType;
 
 /**
  * This is the sample controller for a REST api that I quickly cooked up.
@@ -27,27 +29,6 @@ class SampleDataController extends Controller
      */
     public function indexAction($entityName)
     {
-        //-- Do some validation first
-        $this->getRequest()->setRequestFormat("json");
-        $this->checkEntityName($entityName);
-        $this->checkAuthentication();
-
-
-        $em = $this->getDoctrine()->getManager();
-
-        $entities = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->findAll();
-
-        return $this->getJsonResponse(['entities' => $entities]);
-    }
-
-    /**
-     * Lists all entities owned by the specified user.
-     *
-     * @Route("users/{authorEmail}/{entityName}.json", name="api_users-id-entity-name")
-     * @Method("GET")
-     */
-    public function fetchByUserAction($authorEmail, $entityName)
-    {
         $em = $this->getDoctrine()->getManager();
 
         //-- Do some validation first
@@ -55,11 +36,71 @@ class SampleDataController extends Controller
         $this->checkEntityName($entityName);
         $this->checkAuthentication();
 
+        $parameters = array();
+        $dql = "
+            SELECT
+                e
+            FROM
+                PixoniteRestApiBundle:". $entityName ." e
+            WHERE
+                1 = 1
+        ";
+        $sortBy = " e.creationDate DESC";
+        if (isset($_GET['lastN'])) {
+            $sortBy = "e.creationDate ASC";
+        }
 
-        $user = $em->getRepository("PixoniteRestApiBundle:User")
-            ->findOneByEmail($authorEmail);
-        $entities = $em->getRepository('PixoniteRestApiBundle:'. $entityName)
-            ->findByAuthorUserId($user->id);
+        $entities = array();
+
+        if (isset($_GET['name'])) {
+            $dql .= " AND e.name = :name ";
+            $parameters['name'] = $_GET['name'];
+
+        }
+        elseif (isset($_GET['setTypeId'])) {
+            $dql .= " AND e.setTypeId = :setTypeId ";
+            $parameters['setTypeId'] = $_GET['setTypeId'];
+        }
+        elseif (isset($_GET['authorEmail'])) {
+            $user = $em->getRepository("PixoniteRestApiBundle:User")
+                ->findOneByEmail($_GET['authorEmail']);
+
+            $dql .= " AND e.authorUserId = :authorUserId ";
+            $parameters['authorUserId'] = $user->id;
+        }
+
+        $q = $em->createQuery($dql . " ORDER BY ". $sortBy);
+        foreach ($parameters as $key => $value)
+            $q->setParameter($key, $value);
+
+        if (isset($_GET['lastN']))
+            $q->setMaxResults($_GET['lastN']);
+        if (isset($_GET['firstN']))
+            $q->setMaxResults($_GET['firstN']);
+
+        $entities = $q->getResult();
+
+        if (isset($_GET['anyItemIds'])) {
+            $ids = json_decode($_GET['anyItemIds']);
+            foreach ($entities as $key => $value) {
+                if (count(array_intersect($ids, $value->itemIds)) <= 0) {
+                    unset($entities[$key]);
+                }
+            }
+            $entities = array_values($entities);
+        }
+
+        if (isset($_GET['allItemIds'])) {
+            $ids = json_decode($_GET['allItemIds']);
+            foreach ($entities as $key => $value) {
+                if ($value->itemIds == null)
+                    $value->itemIds = array();
+                if (count(array_diff($ids, $value->itemIds)) != 0) {
+                    unset($entities[$key]);
+                }
+            }
+            $entities = array_values($entities);
+        }
 
         return $this->getJsonResponse(['entities' => $entities]);
     }
@@ -67,30 +108,26 @@ class SampleDataController extends Controller
     /**
      * Creates or modifies a new SampleData entity.
      *
-     * @Route("{entityName}.json", name="api_sample-data_create", defaults={"id" = null})
-     * @Route("{entityName}/{id}.json", name="api_sample-data_update")
+     * @Route("Item.json", name="api_sample-data_create", defaults={"id" = null})
+     * @Route("Item/{id}.json", name="api_sample-data_update")
      * @Method("POST")
      */
-    public function createAction($entityName, $id = null)
+    public function createAction($id = null)
     {
         $em = $this->get('doctrine')->getManager();
 
         //-- Do some validation first
         $this->getRequest()->setRequestFormat("json");
-        $this->checkEntityName($entityName);
         $user = $this->checkAuthentication();
 
 
-
         $request = $this->getRequest();
-        $entityClass = "Pixonite\\RestApiBundle\\Entity\\". $entityName;
-        $entityTypeClass = "Pixonite\\RestApiBundle\\Form\\". $entityName . "Type";
 
-        $entity = new $entityClass();
+        $entity = new Item();
 
         //if this is an element update, attempt to load the element
         if ($id != null) {
-            $entity = $em->getRepository('PixoniteRestApiBundle:'. $entityName)->findOneBy([
+            $entity = $em->getRepository('PixoniteRestApiBundle:Item')->findOneBy([
                 'id' => $id,
                 'authorUserId' => $user->id,
                 ]);
@@ -103,7 +140,8 @@ class SampleDataController extends Controller
             $entity->authorUserId = $user->id;
         }
 
-        $form = $this->createCreateForm($entity, new $entityTypeClass());
+        $ids = null;
+        $form = $this->createCreateForm($entity, new ItemType());
         $form->submit($_POST, false);
 
         if ($form->isValid()) {
@@ -115,11 +153,80 @@ class SampleDataController extends Controller
             return $this->getJsonResponse(["entity" => $entity]);
         }
 
-        return $this->getJsonResponse(['status' => 'failed', 'entity' => $entity]);
+        return $this->getJsonResponse([
+            'status' => 'failed',
+            'entity' => $entity,
+            'errors' => $form->getErrors()
+            ]);
     }
 
     /**
-     * Finds and displays a SampleData entity.
+     * Creates or modifies a new SampleData entity.
+     *
+     * @Route("ItemSet.json", name="api_item-set_create", defaults={"id" = null})
+     * @Route("ItemSet/{id}.json", name="api_item-set_update")
+     * @Method("POST")
+     */
+    public function createItemSetAction($id = null)
+    {
+        $em = $this->get('doctrine')->getManager();
+
+        //-- Do some validation first
+        $this->getRequest()->setRequestFormat("json");
+        $user = $this->checkAuthentication();
+
+
+
+        $request = $this->getRequest();
+
+        $entity = new ItemSet();
+
+        //if this is an element update, attempt to load the element
+        if ($id != null) {
+            $entity = $em->getRepository('PixoniteRestApiBundle:ItemSet')->findOneBy([
+                'id' => $id,
+                'authorUserId' => $user->id,
+                ]);
+            if (!$entity) {
+                throw $this->createNotFoundException('Unable to find ID or access is denied.');
+            }
+        }
+        //if we're creating an item, then initialize some defaults
+        else {
+            $entity->authorUserId = $user->id;
+        }
+
+        //--ICKY HACK APPROACHING--
+        //this hacks around the fact that Symfony forms does a crappy job
+        //handling arrays. So we basically store the POST data for ItemIDs,
+        //and omit it from the form handling system.
+        $ids = null;
+        $_POST['itemIds'] = array_values(json_decode($_POST['itemIds']));
+        $ids = $_POST['itemIds'];
+        unset($_POST['itemIds']);
+
+        $form = $this->createCreateForm($entity, new ItemSetType());
+        $form->submit($_POST, false);
+
+        if ($form->isValid()) {
+
+            $entity->itemIds = $ids;
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($entity);
+            $em->flush();
+
+            return $this->getJsonResponse(["entity" => $entity]);
+        }
+
+        return $this->getJsonResponse([
+            'status' => 'failed',
+            'entity' => $entity,
+            'errors' => (string) $form->getErrors(true, false),
+            ]);
+    }
+
+    /**
+     * Finds and displays an entity
      *
      * @Route("{entityName}/{id}.json", name="api_sample-data_show")
      * @Method("GET")
@@ -203,6 +310,8 @@ class SampleDataController extends Controller
      */
     private function checkEntityName($name)
     {
+        /*
+         * Commenting out for now the ability to auto detect this list.
         $em = $this->getDoctrine()->getManager();
         $allMetadata = $em->getMetadataFactory()->getAllMetadata();
         $allEntities = [];
@@ -211,6 +320,8 @@ class SampleDataController extends Controller
             $classNameInfo = explode("\\", $entityMetaData->getName());
             $allEntities[] = array_pop($classNameInfo);
         }
+        */
+        $allEntities = ['Item', 'ItemSet'];
 
         if (!in_array($name, $allEntities))
             throw new \Exception("Entity not found: ". $name);

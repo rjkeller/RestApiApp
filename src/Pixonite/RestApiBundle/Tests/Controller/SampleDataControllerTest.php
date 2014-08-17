@@ -44,7 +44,6 @@ class ItemControllerTest extends WebTestCase
 
         $result = json_decode(curl_exec($ch));
         curl_close($ch);
-
         $this->assertEquals("Success!", $result->status);
 
         //-- try to delete an entity that doesn't belong to this user.
@@ -82,13 +81,33 @@ class ItemControllerTest extends WebTestCase
 
         //-- retrieve by user ID test
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/users/'. urlencode('a@aa.com') .'/Item.json');
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json?authorEmail='. urlencode('a@aa.com'));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
         $allEntries = json_decode(curl_exec($ch));
         curl_close($ch);
 
         $this->assertTrue(count($allEntries->entities) > 0);
+
+        //-- retrieve last N results
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json?authorEmail='. urlencode('a@aa.com') ."&firstN=2");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertTrue(count($allEntries->entities) <= 2);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/Item.json?authorEmail='. urlencode('a@aa.com') ."&lastN=2");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertTrue(count($allEntries->entities) <= 2);
+
 
         //-- update element test
         // 1) Update element
@@ -160,5 +179,106 @@ class ItemControllerTest extends WebTestCase
                 $isHit = true;
         }
         $this->assertFalse($isHit);
+
+
+
+        //-- create item set
+        $fields = array(
+            'setTypeId' => 2,
+            'name' => 'woah12',
+            'itemIds' => json_encode([1,2]),
+            'url' => 'http://yay',
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertEquals("Success!", $result->status);
+
+        $fields = array(
+            'setTypeId' => 1,
+            'name' => 'woah1',
+            'itemIds' => json_encode([1]),
+            'url' => 'http://yay1',
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertEquals("Success!", $result->status);
+
+        $fields = array(
+            'setTypeId' => 1,
+            'name' => 'woah2',
+            'itemIds' => json_encode([2]),
+            'url' => 'http://yay2',
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertEquals("Success!", $result->status);
+
+        $fields = array(
+            'setTypeId' => 1,
+            'name' => 'woah',
+            'itemIds' => json_encode([]),
+            'url' => 'http://yay',
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $this->assertEquals("Success!", $result->status);
+
+
+        //-- try some queries
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://restapi.gdev/api/v1/ItemSet.json?anyItemIds='. urlencode(json_encode([1,2])));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $goodAuthHeader);
+        $allEntries = (curl_exec($ch));
+        curl_close($ch);
+
+        $numHit = 0;
+        echo($allEntries);die();
+        foreach ($allEntries->entities as $obj) {
+            if ($obj->name == "woah1" || $obj->name == "woah12")
+                $isHit++;
+        }
+        $this->assertTrue($numHit >= 2);
+
     }
 }
