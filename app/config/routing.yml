@@ -1,0 +1,5 @@
+pixonite_rest_api:
+    resource: "@PixoniteRestApiBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
