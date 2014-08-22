@@ -61,6 +61,8 @@ If I had more time, I'd probably improve a couple of things. Here is a brief (an
 
 - Errors are not super verbose. It could use some improvement to provide more details to the developer if they hit a snag. Right now it can be challenging to debug a call without looking at the code of the Rest server and that is a problem.
 
+- I ran out of time for super solid form validation. So the system permits more junk than it should. My plan for implementation would involve using the Symfony form validation system to make it super easy to validate each field. I have some validation that was mentioned in the spec, but it's incomplete in my opinion.
+
 - I was hoping to have more extensive unit tests, but I ran out of time. I guess this is the story of unit tests at too many organizations :). But some is better than none.
 
 - So using the Doctrine 'array' type was ItemSet.itemIds was good in theory, but the operators were more broken than I remember it. I ended up spending a dumb amount of time trying to debug Doctrine. So for ItemSet, the code for managing itemIds is more wonky than it should be. I basically had to hack the operators in PHP and that is not cool. I guess I should've just did it the old-fashioned way and used JOINs with a table for ItemSet->Item relations. So if I had more time, I'd likely just do joins and trash the PHP operators. With that said, the PHP operators do work.
