@@ -3,7 +3,7 @@ namespace Pixonite\RestApiBundle\DataFixtures\ORM;
 
 use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Common\Persistence\ObjectManager;
-use Pixonite\RestApiBundle\Entity\User;
+use Pixonite\RestApiBundle\Entity\SetType;
 
 class LoadSetTypes implements FixtureInterface
 {
